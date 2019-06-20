@@ -1,0 +1,27 @@
+{
+  "mode": "All",
+  "policyRule": {
+    "if": {
+      "allOf": [
+        {
+          "source": "action",
+          "like": "Microsoft.Network/publicIPAddresses/*"
+        },
+        {
+          "not": {
+            "anyOf": [
+              {
+                "value": "[resourceGroup().name]",
+                "like": "MC_*"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "then": {
+      "effect": "deny"
+    }
+  },
+  "parameters": {}
+}
