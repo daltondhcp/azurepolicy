@@ -1,0 +1,79 @@
+{
+  "mode": "All",
+  "policyRule": {
+    "if": {
+      "allOf": [
+        {
+          "field": "type",
+          "equals": "Microsoft.Resources/subscriptions/resourceGroups"
+        },
+        {
+          "field": "[concat('tags[', parameters('tagName'), ']')]",
+          "equals": "[parameters('tagValue')]"
+        }
+      ]
+    },
+    "then": {
+      "effect": "deployIfNotExists",
+      "details": {
+        "type": "Microsoft.Authorization/locks",
+        "roleDefinitionIds": [
+          "/providers/Microsoft.Authorization/roleDefinitions/18d7d88d-d35e-4fb5-a5c3-7773c20a72d9",
+          "/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"
+        ],
+        "existenceCondition": {
+          "field": "Microsoft.Authorization/locks/level",
+          "equals": "CanNotDelete"
+        },
+        "deployment": {
+          "properties": {
+            "mode": "incremental",
+            "template": {
+              "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+              "contentVersion": "1.0.0.0",
+              "parameters": {
+                "resourceGroup": {
+                  "type": "string"
+                }
+              },
+              "variables": {},
+              "resources": [
+                {
+                  "type": "Microsoft.Authorization/locks",
+                  "apiVersion": "2015-01-01",
+                  "name": "[concat(parameters('resourceGroup'),'-DoNotDelete-lock')]",
+                  "properties": {
+                    "level": "CanNotDelete",
+                    "notes": "[concat('Prevents deletion of the resource group',' ', parameters('resourceGroup'), ' ', 'and containing resources')]"
+                  }
+                }
+              ],
+              "outputs": {}
+            },
+            "parameters": {
+              "resourceGroup": {
+                "value": "[resourcegroup().name]"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "parameters": {
+    "tagName": {
+      "type": "String",
+      "metadata": {
+        "displayName": "Tag Name",
+        "description": "The tag namne to audit against (i.e. Environment, CostCenter, etc.)"
+      }
+    },
+    "tagValue": {
+      "type": "String",
+      "metadata": {
+        "displayName": "Tag Value",
+        "description": "Value of the tag to audit against (i.e. Prod/UAT/TEST, 12345, etc.)"
+      }
+    }
+  }
+}
