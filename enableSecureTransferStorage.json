@@ -1,0 +1,27 @@
+{
+  "mode": "All",
+  "policyRule": {
+    "if": {
+      "allOf": [
+        {
+          "field": "type",
+          "equals": "Microsoft.Storage/storageAccounts"
+        },
+        {
+          "field": "Microsoft.Storage/storageAccounts/supportsHttpsTrafficOnly",
+          "equals": false
+        }
+      ]
+    },
+    "then": {
+      "effect": "append",
+      "details": [
+        {
+          "field": "Microsoft.Storage/storageAccounts/supportsHttpsTrafficOnly",
+          "value": true
+        }
+      ]
+    }
+  },
+  "parameters": {}
+}
