@@ -1,0 +1,39 @@
+{
+  "mode": "All",
+  "policyRule": {
+    "if": {
+      "allOf": [
+        {
+          "field": "name",
+          "notlike": "[concat(parameters('pattern'), '-','*')]"
+        },
+        {
+          "field": "type",
+          "equals": "Microsoft.Resources/subscriptions/resourceGroups"
+        },
+        {
+          "not": {
+            "anyof": [
+              {
+                "field": "name",
+                "like": "MC_*"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "then": {
+      "effect": "deny"
+    }
+  },
+  "parameters": {
+    "project": {
+      "type": "String",
+      "metadata": {
+        "displayName": "pattern",
+        "description": "Resource Group Pattern"
+      }
+    }
+  }
+}
