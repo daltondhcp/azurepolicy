@@ -1,0 +1,96 @@
+{
+  "mode": "All",
+  "policyRule": {
+    "if": {
+      "allOf": [
+        {
+          "field": "type",
+          "equals": "Microsoft.Compute/virtualMachines"
+        },
+        {
+          "field": "tags.backupType",
+          "equals": "ARS Vault"
+        }
+      ]
+    },
+    "then": {
+      "effect": "deployIfNotExists",
+      "details": {
+        "type": "Microsoft.RecoveryServices/backupprotecteditems",
+        "existenceCondition": {
+          "allOf": [
+            {
+              "field": "name",
+              "like": "*"
+            }
+          ]
+        },
+        "roleDefinitionIds": [
+          "/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"
+        ],
+        "deployment": {
+          "properties": {
+            "mode": "incremental",
+            "template": {
+              "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+              "contentVersion": "1.0.0.0",
+              "parameters": {
+                "VMName": {
+                  "type": "string"
+                },
+                "VMRG": {
+                  "type": "string"
+                }
+              },
+              "variables": {
+                "BackupIntentConcat": "[concat('/Azure/vm;iaasvmcontainerv2;',parameters('VMRG'),';',parameters('VMName'))]",
+                "BackupEnvironment": "[substring(parameters('VMRG'),0,7)]",
+                "BackupEnvironment2": "[substring(parameters('VMRG'),4,3)]",
+                "BackupVaultRGName": "[if(equals(variables('BackupEnvironment2'),'HUB'),'CMN-HUB-BCK-rg',concat(variables('BackupEnvironment'),'-BCK-rg'))]",
+                "applicationRP": "[substring(parameters('VMName'),10,2)]",
+                "BackupVaultName": "[if(equals(variables('BackupEnvironment2'),'HUB'),'CMN-HUB-ARS',concat(variables('BackupEnvironment'),'-ARS'))]",
+                "BackupPolicyName": "[if(equals(variables('applicationRP'),'am'),'VM-AM-Policy', if(equals(variables('applicationRP'),'ap'),'VM-AP-Policy', if(equals(variables('applicationRP'),'ci'),'VM-CI-Policy', if(equals(variables('applicationRP'),'eu'),'VM-EU-Policy','DefaultPolicy'))))]"
+              },
+              "resources": [
+                {
+                  "apiVersion": "2017-05-10",
+                  "name": "[concat(parameters('VMName'), '-' , 'BackupIntent')]",
+                  "type": "Microsoft.Resources/deployments",
+                  "resourceGroup": "[variables('BackupVaultRGName')]",
+                  "properties": {
+                    "mode": "Incremental",
+                    "template": {
+                      "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                      "contentVersion": "1.0.0.0",
+                      "resources": [
+                        {
+                          "name": "[concat(variables('BackupVaultName'),variables('BackupIntentConcat'))]",
+                          "apiVersion": "2017-07-01",
+                          "type": "Microsoft.RecoveryServices/vaults/backupFabrics/backupProtectionIntent",
+                          "properties": {
+                            "protectionIntentItemType": "AzureResourceItem",
+                            "policyId": "[concat(resourceId('Microsoft.RecoveryServices/vaults/backuppolicies',variables('BackupVaultName'),variables('BackupPolicyName')))]",
+                            "sourceResourceId": "[concat(resourceId('Microsoft.Compute/virtualMachines',parameters('VMName')))]"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            "parameters": {
+              "VMName": {
+                "value": "[field('name')]"
+              },
+              "VMRG": {
+                "value": "[resourcegroup().name]"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "parameters": {}
+}
